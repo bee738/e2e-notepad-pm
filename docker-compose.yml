@@ -1,0 +1,35 @@
+version: "3.9"
+services:
+  db:
+    image: postgres:14-alpine
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password # Replace in production, consider using Docker Secrets
+      POSTGRES_DB: e2e_notepad_db
+    ports:
+      - "5432:5432" # Expose DB port for development (remove or change in production for security)
+    volumes:
+      - db_data:/var/lib/postgresql/data/
+
+  backend:
+    build: ./backend
+    ports:
+      - "8000:8000" # Backend accessible on host port 8000, Docker internal port 8000
+    environment:
+      DATABASE_URL: postgresql://postgres:password@db:5432/e2e_notepad_db
+      SECRET_KEY: your-secret-key-for-jwt-replace-in-production # Replace in production, use Docker Secrets or environment variables securely
+    depends_on:
+      - db
+
+  frontend:
+    build: ./frontend # Assuming you want to "build" a static frontend in a Docker image (can be simpler if serving static files directly)
+    ports:
+      - "8081:80" # Frontend accessible on host port 8081, Docker internal port 80
+    volumes:
+      - ./frontend:/usr/share/nginx/html:ro # For static frontend, can serve from nginx or similar web server
+    depends_on:
+      - backend
+    image: nginx:alpine # Example: using nginx to serve static frontend
+
+volumes:
+  db_data:
